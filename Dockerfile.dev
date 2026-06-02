@@ -1,0 +1,14 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Instalar dependencias primero (capa cacheada)
+COPY package*.json ./
+RUN npm install
+
+# El código fuente se monta como volumen en docker-compose,
+# así que no se copia aquí — solo se necesita para la imagen base.
+
+EXPOSE 3000
+
+CMD ["npm", "run", "dev"]

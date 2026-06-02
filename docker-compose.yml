@@ -1,0 +1,45 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: taller_buses_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-taller}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-taller123}
+      POSTGRES_DB: ${POSTGRES_DB:-taller_buses_gt}
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-taller}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: taller_buses_app
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-taller}:${POSTGRES_PASSWORD:-taller123}@postgres:5432/${POSTGRES_DB:-taller_buses_gt}
+    ports:
+      - '3000:3000'
+    volumes:
+      # montar el código fuente para hot reload
+      - .:/app
+      # ignorar node_modules del host — se usan los del contenedor
+      - /app/node_modules
+      - /app/.next
+
+volumes:
+  postgres_data:

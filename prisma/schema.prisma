@@ -1,0 +1,326 @@
+// Taller Buses GT — Schema de base de datos
+// Montos siempre en Decimal (GTQ), fechas en UTC
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────
+// Auth (compatible con better-auth)
+// ─────────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  nombre        String
+  email         String    @unique
+  emailVerified Boolean   @default(false)
+  imagen        String?
+  rol           Rol       @default(CLIENTE)
+  telefono      String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // better-auth relations
+  sessions      Session[]
+  accounts      Account[]
+
+  // Relaciones de negocio
+  trabajos      Trabajo[]
+  ventas        Venta[]
+  auditoria     Auditoria[]
+
+  @@map("usuarios")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sesiones")
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  userId                String
+  accountId             String
+  providerId            String
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("cuentas")
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("verificaciones")
+}
+
+// ─────────────────────────────────────────
+// Negocio principal
+// ─────────────────────────────────────────
+
+model Trabajo {
+  id          String        @id @default(cuid())
+  clienteId   String
+  estado      EstadoTrabajo @default(COTIZACION)
+  descripcion String
+  notas       String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  cliente      User          @relation(fields: [clienteId], references: [id])
+  presupuestos Presupuesto[]
+  pagos        Pago[]
+  consumos     Consumo[]
+  auditoria    Auditoria[]
+
+  @@map("trabajos")
+}
+
+model Presupuesto {
+  id         String              @id @default(cuid())
+  trabajoId  String
+  tipo       TipoPresupuesto     @default(INICIAL)
+  estado     EstadoPresupuesto   @default(PENDIENTE)
+  monto      Decimal             @db.Decimal(10, 2)
+  descripcion String
+  notas      String?
+  creadoEn   DateTime            @default(now())
+  aprobadoEn DateTime?
+  updatedAt  DateTime            @updatedAt
+
+  trabajo   Trabajo     @relation(fields: [trabajoId], references: [id])
+  auditoria Auditoria[]
+
+  @@map("presupuestos")
+}
+
+model Pago {
+  id        String      @id @default(cuid())
+  trabajoId String
+  monto     Decimal     @db.Decimal(10, 2)
+  metodo    MetodoPago
+  fecha     DateTime
+  notas     String?
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  trabajo   Trabajo     @relation(fields: [trabajoId], references: [id])
+  auditoria Auditoria[]
+
+  @@map("pagos")
+}
+
+// ─────────────────────────────────────────
+// Inventario
+// ─────────────────────────────────────────
+
+model Insumo {
+  id               String    @id @default(cuid())
+  nombre           String
+  descripcion      String?
+  unidad           String    // "unidad", "litro", "metro", etc.
+  stockActual      Decimal   @db.Decimal(10, 3)
+  stockMinimo      Decimal   @db.Decimal(10, 3) @default(0)
+  esPublico        Boolean   @default(false)
+  precioVenta      Decimal?  @db.Decimal(10, 2) // solo si esPublico
+  imagenUrl        String?   // URL de Cloudinary
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  consumos         Consumo[]
+  lineasCompra     LineaCompra[]
+  lineasVenta      LineaVenta[]
+  auditoria        Auditoria[]
+
+  @@map("insumos")
+}
+
+model Consumo {
+  id        String   @id @default(cuid())
+  trabajoId String
+  insumoId  String
+  cantidad  Decimal  @db.Decimal(10, 3)
+  costoUnit Decimal  @db.Decimal(10, 2)
+  fecha     DateTime @default(now())
+  notas     String?
+  createdAt DateTime @default(now())
+
+  trabajo Trabajo   @relation(fields: [trabajoId], references: [id])
+  insumo  Insumo    @relation(fields: [insumoId], references: [id])
+
+  @@map("consumos")
+}
+
+// ─────────────────────────────────────────
+// Compras (empresa → proveedor)
+// ─────────────────────────────────────────
+
+model Proveedor {
+  id        String    @id @default(cuid())
+  nombre    String
+  contacto  String?
+  telefono  String?
+  email     String?
+  notas     String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  compras   Compra[]
+
+  @@map("proveedores")
+}
+
+model Compra {
+  id          String        @id @default(cuid())
+  proveedorId String
+  fecha       DateTime
+  notas       String?
+  total       Decimal       @db.Decimal(10, 2)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  proveedor   Proveedor     @relation(fields: [proveedorId], references: [id])
+  lineas      LineaCompra[]
+  auditoria   Auditoria[]
+
+  @@map("compras")
+}
+
+model LineaCompra {
+  id        String   @id @default(cuid())
+  compraId  String
+  insumoId  String
+  cantidad  Decimal  @db.Decimal(10, 3)
+  costoUnit Decimal  @db.Decimal(10, 2)
+
+  compra  Compra @relation(fields: [compraId], references: [id], onDelete: Cascade)
+  insumo  Insumo @relation(fields: [insumoId], references: [id])
+
+  @@map("lineas_compra")
+}
+
+// ─────────────────────────────────────────
+// Ventas directas (catálogo público)
+// ─────────────────────────────────────────
+
+model Venta {
+  id        String       @id @default(cuid())
+  clienteId String
+  estado    EstadoVenta  @default(PENDIENTE)
+  total     Decimal      @db.Decimal(10, 2)
+  metodo    MetodoPago?
+  notas     String?
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  cliente   User         @relation(fields: [clienteId], references: [id])
+  lineas    LineaVenta[]
+  auditoria Auditoria[]
+
+  @@map("ventas")
+}
+
+model LineaVenta {
+  id        String  @id @default(cuid())
+  ventaId   String
+  insumoId  String
+  cantidad  Decimal @db.Decimal(10, 3)
+  precioUnit Decimal @db.Decimal(10, 2)
+
+  venta  Venta  @relation(fields: [ventaId], references: [id], onDelete: Cascade)
+  insumo Insumo @relation(fields: [insumoId], references: [id])
+
+  @@map("lineas_venta")
+}
+
+// ─────────────────────────────────────────
+// Auditoría
+// ─────────────────────────────────────────
+
+model Auditoria {
+  id          String   @id @default(cuid())
+  usuarioId   String?
+  accion      String
+  entidad     String
+  entidadId   String?
+  detalle     Json?
+  createdAt   DateTime @default(now())
+
+  usuario     User?        @relation(fields: [usuarioId], references: [id])
+  trabajo     Trabajo?     @relation(fields: [entidadId], references: [id], map: "auditoria_trabajo_fk")
+  presupuesto Presupuesto? @relation(fields: [entidadId], references: [id], map: "auditoria_presupuesto_fk")
+  pago        Pago?        @relation(fields: [entidadId], references: [id], map: "auditoria_pago_fk")
+  compra      Compra?      @relation(fields: [entidadId], references: [id], map: "auditoria_compra_fk")
+  insumo      Insumo?      @relation(fields: [entidadId], references: [id], map: "auditoria_insumo_fk")
+  venta       Venta?       @relation(fields: [entidadId], references: [id], map: "auditoria_venta_fk")
+
+  @@map("auditoria")
+}
+
+// ─────────────────────────────────────────
+// Enums
+// ─────────────────────────────────────────
+
+enum Rol {
+  ADMIN
+  CLIENTE
+}
+
+enum EstadoTrabajo {
+  COTIZACION
+  EN_CURSO
+  COMPLETADO
+  CANCELADO
+}
+
+enum TipoPresupuesto {
+  INICIAL
+  EXTRA
+}
+
+enum EstadoPresupuesto {
+  PENDIENTE
+  APROBADO
+  RECHAZADO
+}
+
+enum MetodoPago {
+  EFECTIVO
+  TRANSFERENCIA
+  CHEQUE
+}
+
+enum EstadoVenta {
+  PENDIENTE
+  CONFIRMADA
+  CANCELADA
+}
