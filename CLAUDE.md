@@ -78,6 +78,21 @@ Sin roles de operario por ahora.
 /components
 /lib
 
+## Git
+- Solo el desarrollador hace commits — Claude nunca hace `git add`, `git commit` ni `git push`
+- Claude puede preparar el mensaje de commit cuando se le pida, pero la ejecución es manual
+
+## Migraciones de base de datos
+Correr `docker compose exec app npm run db:migrate` cada vez que se modifique `prisma/schema.prisma`.
+Casos que requieren migración:
+- Agregar o eliminar un modelo
+- Agregar, quitar o renombrar un campo
+- Cambiar el tipo de un campo
+- Agregar una relación, índice o constraint
+
+En desarrollo se puede usar `db:push` para iterar rápido (no genera archivos de migración).
+Usar `db:migrate` cuando ya hay datos reales o antes de hacer deploy a Railway.
+
 ## Convenciones
 - TypeScript estricto en todo el proyecto
 - Nombres de variables y comentarios en español (es el negocio del cliente)
