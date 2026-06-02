@@ -63,6 +63,13 @@ export default function LoginPage() {
           </div>
 
           <LoginForm />
+
+          <p className="text-center text-sm text-gray-500">
+            ¿Primera vez?{' '}
+            <a href="/registro" className="text-[#6DC424] hover:underline font-medium">
+              Crear cuenta
+            </a>
+          </p>
         </div>
       </div>
     </div>

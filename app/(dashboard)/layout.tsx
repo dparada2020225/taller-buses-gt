@@ -1,11 +1,12 @@
-// TODO: verificar que el usuario tiene rol ADMIN
+import { Sidebar } from '@/components/dashboard/sidebar'
+
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen">
-      <aside className="w-64 border-r bg-card">
-        {/* TODO: navegación del panel admin */}
-      </aside>
-      <main className="flex-1 p-8">{children}</main>
+    <div className="flex h-screen overflow-hidden bg-gray-50">
+      <Sidebar />
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <main className="flex-1 overflow-y-auto">{children}</main>
+      </div>
     </div>
   )
 }

@@ -18,4 +18,10 @@ export const auth = betterAuth({
   session: {
     expiresIn: 60 * 60 * 24 * 7, // 7 días
   },
+  user: {
+    fields: {
+      name: 'nombre',
+      image: 'imagen',
+    },
+  },
 })

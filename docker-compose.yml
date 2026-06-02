@@ -34,6 +34,7 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-taller}:${POSTGRES_PASSWORD:-taller123}@postgres:5432/${POSTGRES_DB:-taller_buses_gt}
     ports:
       - '3000:3000'
+      - '5555:5555'
     volumes:
       # montar el código fuente para hot reload
       - .:/app
