@@ -6,6 +6,7 @@ import { formatearFecha, formatearMoneda } from '@/lib/utils'
 import { ArrowLeft, FileText, Plus } from 'lucide-react'
 import { CambiarEstadoTrabajo } from '@/components/trabajos/cambiar-estado'
 import { RegistrarPagoDialog } from '@/components/pagos/registrar-pago-dialog'
+import { RegistrarConsumoDialog } from '@/components/trabajos/registrar-consumo-dialog'
 
 const PRES_BADGE: Record<string, string> = {
   PENDIENTE: 'bg-yellow-50 text-yellow-700',
@@ -140,11 +141,14 @@ export default async function TrabajoPage({ params }: { params: { id: string } }
         </div>
 
         {/* Consumo de insumos */}
-        {trabajo.consumos.length > 0 && (
-          <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
-            <div className="px-5 py-4 border-b border-gray-100">
-              <h3 className="text-sm font-semibold text-gray-900">Consumo de insumos (últimos 10)</h3>
-            </div>
+        <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+            <h3 className="text-sm font-semibold text-gray-900">Consumo de insumos</h3>
+            <RegistrarConsumoDialog trabajoId={trabajo.id} />
+          </div>
+          {trabajo.consumos.length === 0 ? (
+            <p className="px-5 py-6 text-sm text-gray-400">Sin consumos registrados</p>
+          ) : (
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-100">
@@ -165,8 +169,8 @@ export default async function TrabajoPage({ params }: { params: { id: string } }
                 ))}
               </tbody>
             </table>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </>
   )

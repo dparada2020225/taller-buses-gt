@@ -10,6 +10,14 @@ interface Cliente {
   telefono: string | null
 }
 
+interface TrabajoExistente {
+  id: string
+  clienteId: string
+  descripcion: string
+  nombreTransporte: string | null
+  noPlaca: string | null
+}
+
 interface Linea {
   descripcion: string
   monto: string
@@ -29,15 +37,20 @@ const SECCIONES_PREDEFINIDAS = [
 
 interface Props {
   clientes: Cliente[]
+  clienteIdInicial?: string
+  trabajoExistente?: TrabajoExistente | null
 }
 
-export function NuevoPresupuestoForm({ clientes }: Props) {
+export function NuevoPresupuestoForm({ clientes, clienteIdInicial = '', trabajoExistente = null }: Props) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  // Datos del trabajo
-  const [clienteId, setClienteId] = useState('')
+  // Si hay un trabajo existente es un presupuesto EXTRA — no creamos trabajo nuevo
+  const esExtra = !!trabajoExistente
+
+  // Datos del trabajo (solo se usan si NO es extra)
+  const [clienteId, setClienteId] = useState(clienteIdInicial)
   const [descripcion, setDescripcion] = useState('')
   const [nombreTransporte, setNombreTransporte] = useState('')
   const [noPlaca, setNoPlaca] = useState('')
@@ -98,50 +111,63 @@ export function NuevoPresupuestoForm({ clientes }: Props) {
     return `Q${n.toLocaleString('es-GT', { minimumFractionDigits: 2 })}`
   }
 
+  const seccionesPayload = secciones
+    .map(s => ({
+      nombre: s.nombre,
+      lineas: s.lineas
+        .filter(l => l.descripcion.trim())
+        .map(l => ({
+          descripcion: l.descripcion,
+          monto: l.monto ? parseFloat(l.monto) : null,
+          subItems: l.subItems || null,
+        })),
+    }))
+    .filter(s => s.lineas.length > 0)
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!clienteId) { setError('Selecciona un cliente'); return }
-    if (!descripcion) { setError('Escribe una descripción del trabajo'); return }
-    if (secciones.length === 0) { setError('Agrega al menos una sección'); return }
+    if (!esExtra && !clienteId) { setError('Selecciona un cliente'); return }
+    if (!esExtra && !descripcion) { setError('Escribe una descripción del trabajo'); return }
+    if (seccionesPayload.length === 0) { setError('Agrega al menos una sección con contenido'); return }
 
     setLoading(true)
     setError('')
 
-    // 1. Crear trabajo
-    const trabajoRes = await fetch('/api/trabajos', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ clienteId, descripcion, nombreTransporte, noPlaca }),
-    })
-    if (!trabajoRes.ok) {
-      setError('Error al crear el trabajo')
-      setLoading(false)
-      return
-    }
-    const trabajo = await trabajoRes.json()
+    let trabajoId: string
 
-    // 2. Crear presupuesto
+    if (esExtra) {
+      // Usar el trabajo existente directamente
+      trabajoId = trabajoExistente!.id
+    } else {
+      // 1. Crear trabajo nuevo
+      const trabajoRes = await fetch('/api/trabajos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clienteId, descripcion, nombreTransporte, noPlaca }),
+      })
+      if (!trabajoRes.ok) {
+        setError('Error al crear el trabajo')
+        setLoading(false)
+        return
+      }
+      const trabajo = await trabajoRes.json()
+      trabajoId = trabajo.id
+    }
+
+    // 2. Crear presupuesto (INICIAL o EXTRA según contexto)
     const presRes = await fetch('/api/presupuestos', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        trabajoId: trabajo.id,
-        tipo: 'INICIAL',
-        secciones: secciones.map(s => ({
-          nombre: s.nombre,
-          lineas: s.lineas
-            .filter(l => l.descripcion.trim())
-            .map(l => ({
-              descripcion: l.descripcion,
-              monto: l.monto ? parseFloat(l.monto) : null,
-              subItems: l.subItems || null,
-            })),
-        })).filter(s => s.lineas.length > 0),
+        trabajoId,
+        tipo: esExtra ? 'EXTRA' : 'INICIAL',
+        secciones: seccionesPayload,
       }),
     })
 
     if (!presRes.ok) {
-      setError('Error al crear el presupuesto')
+      const body = await presRes.json()
+      setError(body.error ?? 'Error al crear el presupuesto')
       setLoading(false)
       return
     }
@@ -156,62 +182,71 @@ export function NuevoPresupuestoForm({ clientes }: Props) {
         <div className="rounded-md bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{error}</div>
       )}
 
-      {/* Datos del trabajo */}
-      <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-6">
-        <h2 className="text-sm font-semibold text-gray-900 mb-4">Datos del trabajo</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="sm:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Cliente</label>
-            <select
-              value={clienteId}
-              onChange={e => setClienteId(e.target.value)}
-              required
-              className="w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#6DC424] focus:border-transparent"
-            >
-              <option value="">Seleccionar cliente...</option>
-              {clientes.map(c => (
-                <option key={c.id} value={c.id}>
-                  {c.nombre} {c.telefono ? `· ${c.telefono}` : ''}
-                </option>
-              ))}
-            </select>
-          </div>
+      {/* Datos del trabajo — solo si es presupuesto INICIAL */}
+      {esExtra ? (
+        <div className="rounded-xl border border-blue-100 bg-blue-50 px-5 py-3">
+          <p className="text-sm font-medium text-blue-800">
+            Presupuesto extra para: <span className="font-bold">{trabajoExistente!.nombreTransporte ?? trabajoExistente!.descripcion}</span>
+          </p>
+          <p className="text-xs text-blue-600 mt-0.5">{trabajoExistente!.descripcion}</p>
+        </div>
+      ) : (
+        <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-6">
+          <h2 className="text-sm font-semibold text-gray-900 mb-4">Datos del trabajo</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="sm:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Cliente</label>
+              <select
+                value={clienteId}
+                onChange={e => setClienteId(e.target.value)}
+                required
+                className="w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#6DC424] focus:border-transparent"
+              >
+                <option value="">Seleccionar cliente...</option>
+                {clientes.map(c => (
+                  <option key={c.id} value={c.id}>
+                    {c.nombre} {c.telefono ? `· ${c.telefono}` : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-          <div className="sm:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Descripción del trabajo</label>
-            <input
-              type="text"
-              value={descripcion}
-              onChange={e => setDescripcion(e.target.value)}
-              required
-              placeholder="Ej: Reconstrucción completa exterior e interior"
-              className="w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#6DC424] focus:border-transparent"
-            />
-          </div>
+            <div className="sm:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Descripción del trabajo</label>
+              <input
+                type="text"
+                value={descripcion}
+                onChange={e => setDescripcion(e.target.value)}
+                required
+                placeholder="Ej: Reconstrucción completa exterior e interior"
+                className="w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#6DC424] focus:border-transparent"
+              />
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Nombre del transporte</label>
-            <input
-              type="text"
-              value={nombreTransporte}
-              onChange={e => setNombreTransporte(e.target.value)}
-              placeholder="Ej: Princesa Fernanda"
-              className="w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#6DC424] focus:border-transparent"
-            />
-          </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Nombre del transporte</label>
+              <input
+                type="text"
+                value={nombreTransporte}
+                onChange={e => setNombreTransporte(e.target.value)}
+                placeholder="Ej: Princesa Fernanda"
+                className="w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#6DC424] focus:border-transparent"
+              />
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">No. Placa</label>
-            <input
-              type="text"
-              value={noPlaca}
-              onChange={e => setNoPlaca(e.target.value)}
-              placeholder="Ej: P-123ABC"
-              className="w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#6DC424] focus:border-transparent"
-            />
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">No. Placa</label>
+              <input
+                type="text"
+                value={noPlaca}
+                onChange={e => setNoPlaca(e.target.value)}
+                placeholder="Ej: P-123ABC"
+                className="w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#6DC424] focus:border-transparent"
+              />
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Secciones */}
       <div className="space-y-3">
@@ -338,7 +373,7 @@ export function NuevoPresupuestoForm({ clientes }: Props) {
           disabled={loading}
           className="rounded-lg bg-[#0f0f0f] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#1a1a1a] disabled:opacity-60 transition"
         >
-          {loading ? 'Guardando...' : 'Crear presupuesto'}
+          {loading ? 'Guardando...' : esExtra ? 'Crear presupuesto extra' : 'Crear presupuesto'}
         </button>
       </div>
     </form>
