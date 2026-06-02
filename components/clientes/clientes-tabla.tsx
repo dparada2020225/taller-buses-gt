@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
 import { formatearFecha } from '@/lib/utils'
 import { Users } from 'lucide-react'
@@ -41,7 +42,9 @@ export async function ClientesTabla() {
         <tbody className="divide-y divide-gray-100">
           {clientes.map((c) => (
             <tr key={c.id} className="hover:bg-gray-50 transition-colors">
-              <td className="px-4 py-3 font-medium text-gray-900">{c.nombre}</td>
+              <td className="px-4 py-3 font-medium text-gray-900">
+                <Link href={`/clientes/${c.id}`} className="hover:text-[#6DC424] transition">{c.nombre}</Link>
+              </td>
               <td className="px-4 py-3 text-gray-500">{c.email}</td>
               <td className="px-4 py-3 text-gray-500">{c.telefono ?? '—'}</td>
               <td className="px-4 py-3">

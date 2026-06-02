@@ -29,6 +29,7 @@ interface Auditoria {
 
 interface Presupuesto {
   id: string
+  folio: number
   montoTotal: string | number
   creadoEn: string | Date
   notas: string | null
@@ -164,6 +165,7 @@ export function VistaPresupuesto({ presupuesto, auditoria = [] }: { presupuesto:
 
           <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px' }}>
             <div>
+              <p><strong>Presupuesto #{String(presupuesto.folio).padStart(4, '0')}</strong></p>
               <p><strong>Lugar y fecha:</strong></p>
               <p>Ciudad Vieja Sacatepéquez, {formatFecha(presupuesto.creadoEn)}.</p>
               <p style={{ marginTop: '8px' }}><strong>Cliente:</strong></p>

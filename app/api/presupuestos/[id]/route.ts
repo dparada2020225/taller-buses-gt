@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getSession } from '@/lib/session'
+import { enviarNotificacionAprobacion } from '@/lib/email'
 
 export async function GET(
   _req: NextRequest,
@@ -123,6 +124,24 @@ export async function PATCH(
         detalle: cambios,
       },
     })
+  }
+
+  // Notificar al admin si el cliente aprobó o rechazó
+  if (estado && ['APROBADO', 'RECHAZADO'].includes(estado) && session.user.rol === 'CLIENTE') {
+    const pres = await prisma.presupuesto.findUnique({
+      where: { id: params.id },
+      select: { folio: true },
+    })
+    const admin = await prisma.user.findFirst({ where: { rol: 'ADMIN' } })
+    if (admin && pres) {
+      enviarNotificacionAprobacion({
+        adminEmail: admin.email,
+        clienteNombre: session.user.nombre,
+        folio: pres.folio,
+        estado,
+        urlPresupuesto: `${process.env.BETTER_AUTH_URL}/presupuestos-admin/${params.id}`,
+      }).catch(console.error)
+    }
   }
 
   return NextResponse.json(actualizado)

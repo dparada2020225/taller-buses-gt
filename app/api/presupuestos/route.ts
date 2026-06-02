@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getSession } from '@/lib/session'
+import { enviarPresupuestoAlCliente } from '@/lib/email'
 
 export async function GET() {
   const session = await getSession()
@@ -83,6 +84,22 @@ export async function POST(req: NextRequest) {
     where: { id: trabajoId, estado: 'COTIZACION' },
     data: { estado: 'EN_CURSO' },
   })
+
+  // Notificar al cliente por email (no bloquea la respuesta)
+  const trabajo = await prisma.trabajo.findUnique({
+    where: { id: trabajoId },
+    include: { cliente: { select: { nombre: true, email: true } } },
+  })
+  if (trabajo) {
+    enviarPresupuestoAlCliente({
+      clienteNombre: trabajo.cliente.nombre,
+      clienteEmail: trabajo.cliente.email,
+      folio: presupuesto.folio,
+      montoTotal: Number(presupuesto.montoTotal),
+      nombreTransporte: trabajo.nombreTransporte,
+      urlPresupuesto: `${process.env.BETTER_AUTH_URL}/mis-presupuestos/${presupuesto.id}`,
+    }).catch(console.error)
+  }
 
   return NextResponse.json(presupuesto, { status: 201 })
 }

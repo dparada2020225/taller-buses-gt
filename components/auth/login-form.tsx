@@ -67,7 +67,7 @@ export function LoginForm() {
           <label htmlFor="password" className="block text-sm font-medium text-gray-700">
             Contraseña
           </label>
-          <a href="#" className="text-xs text-[#6DC424] hover:underline">
+          <a href="/olvide-password" className="text-xs text-[#6DC424] hover:underline">
             ¿Olvidaste tu contraseña?
           </a>
         </div>

@@ -108,6 +108,7 @@ model Trabajo {
 
 model Presupuesto {
   id          String              @id @default(cuid())
+  folio       Int                 @default(autoincrement())
   trabajoId   String
   tipo        TipoPresupuesto     @default(INICIAL)
   estado      EstadoPresupuesto   @default(PENDIENTE)
