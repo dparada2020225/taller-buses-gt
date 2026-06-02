@@ -1,9 +1,11 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { UserPlus, X } from 'lucide-react'
 
 export function NuevoClienteDialog() {
+  const router = useRouter()
   const [abierto, setAbierto] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -35,7 +37,7 @@ export function NuevoClienteDialog() {
     }
 
     setAbierto(false)
-    window.location.reload()
+    router.refresh()
   }
 
   return (

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getSession } from '@/lib/session'
-import { headers } from 'next/headers'
+import { auth } from '@/lib/auth'
 
 export async function GET() {
   const session = await getSession()
@@ -31,35 +31,41 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
   }
 
-  const body = await req.json()
-  const { nombre, email, telefono, password } = body
+  const { nombre, email, telefono, password } = await req.json()
 
   if (!nombre || !email || !password) {
     return NextResponse.json({ error: 'Faltan campos requeridos' }, { status: 400 })
   }
 
-  // Verificar que el email no exista
-  const existe = await prisma.user.findUnique({ where: { email } })
+  const emailNorm = email.toLowerCase().trim()
+
+  const existe = await prisma.user.findUnique({ where: { email: emailNorm } })
   if (existe) {
     return NextResponse.json({ error: 'Ya existe un usuario con ese correo' }, { status: 409 })
   }
 
-  // Crear usuario vía better-auth para que la contraseña quede hasheada
-  const { error } = await fetch(`${process.env.BETTER_AUTH_URL}/api/auth/sign-up/email`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name: nombre, email, password }),
-  }).then((r) => r.json())
+  // Crear via better-auth para que la contraseña quede hasheada
+  const resultado = await auth.api.signUpEmail({
+    body: { name: nombre, email: emailNorm, password },
+  })
 
-  if (error) {
+  const userId = resultado?.user?.id
+  const usuario = userId
+    ? await prisma.user.findUnique({ where: { id: userId } })
+    : await prisma.user.findUnique({ where: { email: emailNorm } })
+
+  if (!usuario) {
     return NextResponse.json({ error: 'Error al crear el usuario' }, { status: 500 })
   }
 
-  // Agregar teléfono si viene
-  const usuario = await prisma.user.findUnique({ where: { email } })
-  if (usuario && telefono) {
-    await prisma.user.update({ where: { id: usuario.id }, data: { telefono } })
-  }
+  await prisma.user.update({
+    where: { id: usuario.id },
+    data: {
+      rol: 'CLIENTE',
+      emailVerified: true,
+      ...(telefono ? { telefono } : {}),
+    },
+  })
 
   return NextResponse.json({ ok: true }, { status: 201 })
 }

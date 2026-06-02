@@ -1,40 +1,21 @@
-'use client'
-
-import { useEffect, useState } from 'react'
+import { prisma } from '@/lib/prisma'
 import { formatearFecha } from '@/lib/utils'
 import { Users } from 'lucide-react'
 
-interface Cliente {
-  id: string
-  nombre: string
-  email: string
-  telefono: string | null
-  createdAt: string
-  _count: { trabajos: number }
-}
-
-export function ClientesTabla() {
-  const [clientes, setClientes] = useState<Cliente[]>([])
-  const [cargando, setCargando] = useState(true)
-
-  useEffect(() => {
-    fetch('/api/clientes')
-      .then((r) => r.json())
-      .then((data) => {
-        setClientes(data)
-        setCargando(false)
-      })
-  }, [])
-
-  if (cargando) {
-    return (
-      <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
-        <div className="flex items-center justify-center py-20 text-sm text-gray-400">
-          Cargando...
-        </div>
-      </div>
-    )
-  }
+// Server Component — fetch directo a BD, sin round-trip extra al cliente
+export async function ClientesTabla() {
+  const clientes = await prisma.user.findMany({
+    where: { rol: 'CLIENTE' },
+    select: {
+      id: true,
+      nombre: true,
+      email: true,
+      telefono: true,
+      createdAt: true,
+      _count: { select: { trabajos: true } },
+    },
+    orderBy: { createdAt: 'desc' },
+  })
 
   if (clientes.length === 0) {
     return (
