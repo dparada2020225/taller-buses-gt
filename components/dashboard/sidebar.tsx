@@ -21,7 +21,7 @@ const NAV_ITEMS = [
   { href: '/dashboard', label: 'Inicio', icon: LayoutDashboard },
   { href: '/clientes', label: 'Clientes', icon: Users },
   { href: '/trabajos', label: 'Trabajos', icon: Wrench },
-  { href: '/presupuestos', label: 'Presupuestos', icon: FileText },
+  { href: '/presupuestos-admin', label: 'Presupuestos', icon: FileText },
   { href: '/inventario', label: 'Inventario', icon: Package },
   { href: '/compras', label: 'Compras', icon: ShoppingCart },
   { href: '/pagos', label: 'Pagos', icon: CreditCard },
@@ -32,8 +32,11 @@ export function Sidebar() {
   const router = useRouter()
 
   async function handleSignOut() {
-    await signOut()
-    router.push('/login')
+    await signOut({
+      fetchOptions: {
+        onSuccess: () => router.push('/login'),
+      },
+    })
   }
 
   return (
