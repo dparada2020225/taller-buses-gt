@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSessionCookie } from 'better-auth/cookies'
 
-// Rutas que no requieren sesión
 const RUTAS_PUBLICAS = ['/login', '/registro', '/catalogo', '/api/auth']
+const RUTAS_ADMIN = ['/dashboard', '/clientes', '/trabajos', '/presupuestos-admin', '/inventario', '/compras', '/pagos']
+const RUTAS_CLIENTE = ['/inicio', '/mis-presupuestos', '/historial']
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
 
-  // Dejar pasar rutas públicas y assets
   if (
     RUTAS_PUBLICAS.some((r) => pathname.startsWith(r)) ||
     pathname.startsWith('/_next') ||
@@ -17,7 +17,6 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next()
   }
 
-  // Verificar sesión leyendo la cookie que setea better-auth
   const session = getSessionCookie(req)
 
   if (!session) {
@@ -26,6 +25,9 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(url)
   }
 
+  // Nota: el middleware no tiene acceso al rol (la cookie solo tiene el token).
+  // La protección por rol se hace en cada Server Component / Route Handler via getSession().
+  // Aquí solo garantizamos que el usuario esté autenticado.
   return NextResponse.next()
 }
 

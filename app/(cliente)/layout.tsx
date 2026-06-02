@@ -1,11 +1,10 @@
-// TODO: verificar que el usuario tiene rol CLIENTE
+import { SidebarCliente } from '@/components/cliente/sidebar-cliente'
+
 export default function ClienteLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen">
-      <aside className="w-64 border-r bg-card">
-        {/* TODO: navegación del portal cliente */}
-      </aside>
-      <main className="flex-1 p-8">{children}</main>
+    <div className="flex h-screen overflow-hidden bg-gray-50">
+      <SidebarCliente />
+      <main className="flex-1 overflow-y-auto">{children}</main>
     </div>
   )
 }

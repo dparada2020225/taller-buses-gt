@@ -88,39 +88,64 @@ model Verification {
 // ─────────────────────────────────────────
 
 model Trabajo {
-  id          String        @id @default(cuid())
-  clienteId   String
-  estado      EstadoTrabajo @default(COTIZACION)
-  descripcion String
-  notas       String?
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  id                String        @id @default(cuid())
+  clienteId         String
+  estado            EstadoTrabajo @default(COTIZACION)
+  descripcion       String
+  nombreTransporte  String?       // Ej: "Princesa Fernanda"
+  noPlaca           String?       // Ej: "P-123ABC"
+  notas             String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
 
   cliente      User          @relation(fields: [clienteId], references: [id])
   presupuestos Presupuesto[]
   pagos        Pago[]
   consumos     Consumo[]
-  auditoria    Auditoria[]
 
   @@map("trabajos")
 }
 
 model Presupuesto {
-  id         String              @id @default(cuid())
-  trabajoId  String
-  tipo       TipoPresupuesto     @default(INICIAL)
-  estado     EstadoPresupuesto   @default(PENDIENTE)
-  monto      Decimal             @db.Decimal(10, 2)
-  descripcion String
-  notas      String?
-  creadoEn   DateTime            @default(now())
-  aprobadoEn DateTime?
-  updatedAt  DateTime            @updatedAt
+  id          String              @id @default(cuid())
+  trabajoId   String
+  tipo        TipoPresupuesto     @default(INICIAL)
+  estado      EstadoPresupuesto   @default(PENDIENTE)
+  montoTotal  Decimal             @default(0) @db.Decimal(10, 2)
+  notas       String?
+  creadoEn    DateTime            @default(now())
+  aprobadoEn  DateTime?
+  updatedAt   DateTime            @updatedAt
 
-  trabajo   Trabajo     @relation(fields: [trabajoId], references: [id])
-  auditoria Auditoria[]
+  trabajo   Trabajo              @relation(fields: [trabajoId], references: [id])
+  secciones SeccionPresupuesto[]
 
   @@map("presupuestos")
+}
+
+model SeccionPresupuesto {
+  id            String   @id @default(cuid())
+  presupuestoId String
+  nombre        String   // "ADENTRO", "AFUERA", "TROMPA", etc.
+  orden         Int      @default(0)
+
+  presupuesto Presupuesto       @relation(fields: [presupuestoId], references: [id], onDelete: Cascade)
+  lineas      LineaPresupuesto[]
+
+  @@map("secciones_presupuesto")
+}
+
+model LineaPresupuesto {
+  id          String   @id @default(cuid())
+  seccionId   String
+  descripcion String
+  monto       Decimal? @db.Decimal(10, 2) // null = precio pendiente ("?")
+  subItems    String?  // texto libre para sub-ítems con "*"
+  orden       Int      @default(0)
+
+  seccion SeccionPresupuesto @relation(fields: [seccionId], references: [id], onDelete: Cascade)
+
+  @@map("lineas_presupuesto")
 }
 
 model Pago {
@@ -134,7 +159,6 @@ model Pago {
   updatedAt DateTime    @updatedAt
 
   trabajo   Trabajo     @relation(fields: [trabajoId], references: [id])
-  auditoria Auditoria[]
 
   @@map("pagos")
 }
@@ -159,7 +183,6 @@ model Insumo {
   consumos         Consumo[]
   lineasCompra     LineaCompra[]
   lineasVenta      LineaVenta[]
-  auditoria        Auditoria[]
 
   @@map("insumos")
 }
@@ -210,7 +233,6 @@ model Compra {
 
   proveedor   Proveedor     @relation(fields: [proveedorId], references: [id])
   lineas      LineaCompra[]
-  auditoria   Auditoria[]
 
   @@map("compras")
 }
@@ -244,7 +266,6 @@ model Venta {
 
   cliente   User         @relation(fields: [clienteId], references: [id])
   lineas    LineaVenta[]
-  auditoria Auditoria[]
 
   @@map("ventas")
 }
@@ -266,22 +287,18 @@ model LineaVenta {
 // Auditoría
 // ─────────────────────────────────────────
 
+// Log de auditoría — referencia polimórfica simple (sin FK a entidades)
+// entidad + entidadId identifican el registro afectado sin FK constraints
 model Auditoria {
-  id          String   @id @default(cuid())
-  usuarioId   String?
-  accion      String
-  entidad     String
-  entidadId   String?
-  detalle     Json?
-  createdAt   DateTime @default(now())
+  id        String   @id @default(cuid())
+  usuarioId String?
+  accion    String
+  entidad   String   // "Presupuesto", "Trabajo", "Insumo", etc.
+  entidadId String?  // ID del registro afectado (sin FK)
+  detalle   Json?
+  createdAt DateTime @default(now())
 
-  usuario     User?        @relation(fields: [usuarioId], references: [id])
-  trabajo     Trabajo?     @relation(fields: [entidadId], references: [id], map: "auditoria_trabajo_fk")
-  presupuesto Presupuesto? @relation(fields: [entidadId], references: [id], map: "auditoria_presupuesto_fk")
-  pago        Pago?        @relation(fields: [entidadId], references: [id], map: "auditoria_pago_fk")
-  compra      Compra?      @relation(fields: [entidadId], references: [id], map: "auditoria_compra_fk")
-  insumo      Insumo?      @relation(fields: [entidadId], references: [id], map: "auditoria_insumo_fk")
-  venta       Venta?       @relation(fields: [entidadId], references: [id], map: "auditoria_venta_fk")
+  usuario User? @relation(fields: [usuarioId], references: [id])
 
   @@map("auditoria")
 }
