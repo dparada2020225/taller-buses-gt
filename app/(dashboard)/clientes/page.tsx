@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import { Topbar } from '@/components/dashboard/topbar'
 import { ClientesTabla } from '@/components/clientes/clientes-tabla'
 import { NuevoClienteDialog } from '@/components/clientes/nuevo-cliente-dialog'

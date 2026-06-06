@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import { prisma } from '@/lib/prisma'
 import { Topbar } from '@/components/dashboard/topbar'
 import { NuevoPresupuestoForm } from '@/components/presupuestos/nuevo-presupuesto-form'
