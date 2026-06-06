@@ -93,6 +93,20 @@ Casos que requieren migración:
 En desarrollo se puede usar `db:push` para iterar rápido (no genera archivos de migración).
 Usar `db:migrate` cuando ya hay datos reales o antes de hacer deploy a Railway.
 
+### Estado actual de migraciones en producción
+El proyecto actualmente usa `prisma db push` en Railway (ver `railway.toml`) porque no existen
+archivos de migración en `/prisma/migrations/` — el schema se aplicó con `db:push` durante el
+desarrollo inicial.
+
+**Cuando se quiera migrar al flujo correcto con archivos de migración:**
+1. Correr `npx prisma migrate dev --name init` localmente (genera `/prisma/migrations/`)
+2. Commitear los archivos de migración generados
+3. Cambiar `railway.toml` de `db push` a `migrate deploy`:
+   ```
+   startCommand = "npx prisma migrate deploy && npm start"
+   ```
+Hacer esto antes de que haya datos reales en producción para evitar conflictos.
+
 ## Convenciones
 - TypeScript estricto en todo el proyecto
 - Nombres de variables y comentarios en español (es el negocio del cliente)
