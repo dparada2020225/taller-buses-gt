@@ -1,6 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  serverExternalPackages: ['better-auth', '@prisma/client', 'prisma'],
+  experimental: {
+    serverComponentsExternalPackages: ['better-auth', '@prisma/client', 'prisma'],
+  },
   images: {
     remotePatterns: [
       {
