@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import { Suspense } from 'react'
 import Image from 'next/image'
 import { LoginForm } from '@/components/auth/login-form'
@@ -65,12 +67,4 @@ export default function LoginPage() {
 
           <p className="text-center text-sm text-gray-500">
             ¿Primera vez?{' '}
-            <a href="/registro" className="text-[#6DC424] hover:underline font-medium">
-              Crear cuenta
-            </a>
-          </p>
-        </div>
-      </div>
-    </div>
-  )
-}
+            <a href="/registro" className="text-[#6
