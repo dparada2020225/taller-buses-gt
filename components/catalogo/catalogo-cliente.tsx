@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import Image from 'next/image'
-import { ShoppingCart, Plus, Minus, X, CheckCircle, Package } from 'lucide-react'
+import Link from 'next/link'
+import { ShoppingCart, Plus, Minus, X, CheckCircle, Package, ArrowLeft } from 'lucide-react'
 import { formatearMoneda } from '@/lib/utils'
 
 interface Producto {
@@ -128,24 +129,41 @@ export function CatalogoCliente({ productos }: { productos: Producto[] }) {
       {/* Header del catálogo */}
       <div className="border-b border-gray-200 bg-white sticky top-0 z-20">
         <div className="container mx-auto px-6 py-4 flex items-center justify-between">
-          <div>
-            <h1 className="text-lg font-bold text-gray-900">Catálogo de productos</h1>
-            <p className="text-xs text-gray-400">{productos.length} producto{productos.length !== 1 ? 's' : ''} disponible{productos.length !== 1 ? 's' : ''}</p>
+          <div className="flex items-center gap-4">
+            <Link
+              href="/"
+              className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 transition"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" /> Inicio
+            </Link>
+            <div className="h-4 w-px bg-gray-200" />
+            <div>
+              <h1 className="text-lg font-bold text-gray-900">Catálogo de productos</h1>
+              <p className="text-xs text-gray-400">{productos.length} producto{productos.length !== 1 ? 's' : ''} disponible{productos.length !== 1 ? 's' : ''}</p>
+            </div>
           </div>
 
-          <button
-            onClick={() => setCarritoAbierto(true)}
-            className="relative flex items-center gap-2 rounded-lg bg-[#0f0f0f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#1a1a1a] transition"
-          >
-            <ShoppingCart className="h-4 w-4" />
-            Carrito
-            {totalItems > 0 && (
-              <span className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-[#6DC424] text-white text-xs font-bold flex items-center justify-center">
-                {totalItems}
-              </span>
-            )}
-          </button>
-        </div>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/login"
+              className="text-sm text-gray-500 hover:text-gray-900 transition hidden sm:block"
+            >
+              Ingresar
+            </Link>
+
+            <button
+              onClick={() => setCarritoAbierto(true)}
+              className="relative flex items-center gap-2 rounded-lg bg-[#0f0f0f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#1a1a1a] transition"
+            >
+              <ShoppingCart className="h-4 w-4" />
+              Carrito
+              {totalItems > 0 && (
+                <span className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-[#6DC424] text-white text-xs font-bold flex items-center justify-center">
+                  {totalItems}
+                </span>
+              )}
+            </button>
+          </div>
       </div>
 
       {/* Grid de productos */}

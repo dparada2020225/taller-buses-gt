@@ -13,6 +13,7 @@ import {
   CreditCard,
   ShoppingBag,
   Shield,
+  UserCog,
   User,
   LogOut,
 } from 'lucide-react'
@@ -29,6 +30,7 @@ const NAV_ITEMS = [
   { href: '/compras',            label: 'Compras',         icon: ShoppingCart },
   { href: '/pagos',              label: 'Pagos',           icon: CreditCard },
   { href: '/ventas',             label: 'Ventas directas', icon: ShoppingBag },
+  { href: '/usuarios',           label: 'Usuarios',        icon: UserCog },
   { href: '/auditoria',          label: 'Auditoría',       icon: Shield },
 ]
 
