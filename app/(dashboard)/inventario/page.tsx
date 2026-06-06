@@ -157,6 +157,7 @@ export default async function InventarioPage() {
                                 stockMinimo: Number(insumo.stockMinimo),
                                 esPublico: insumo.esPublico,
                                 precioVenta: insumo.precioVenta ? Number(insumo.precioVenta) : null,
+                                imagenUrl: insumo.imagenUrl ?? null,
                               }}
                             />
                           </div>

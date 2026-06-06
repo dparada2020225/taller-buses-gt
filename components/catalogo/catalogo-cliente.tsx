@@ -164,6 +164,7 @@ export function CatalogoCliente({ productos }: { productos: Producto[] }) {
               )}
             </button>
           </div>
+        </div>
       </div>
 
       {/* Grid de productos */}

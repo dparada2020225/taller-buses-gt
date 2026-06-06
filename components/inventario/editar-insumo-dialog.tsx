@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Pencil, X } from 'lucide-react'
+import { ImageUpload } from '@/components/ui/image-upload'
 
 interface Insumo {
   id: string
@@ -13,18 +14,16 @@ interface Insumo {
   stockMinimo: number
   esPublico: boolean
   precioVenta: number | null
+  imagenUrl: string | null
 }
 
-interface Props {
-  insumo: Insumo
-}
-
-export function EditarInsumoDialog({ insumo }: Props) {
+export function EditarInsumoDialog({ insumo }: { insumo: Insumo }) {
   const router = useRouter()
-  const [abierto, setAbierto] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const [abierto, setAbierto]     = useState(false)
+  const [loading, setLoading]     = useState(false)
+  const [error, setError]         = useState('')
   const [esPublico, setEsPublico] = useState(insumo.esPublico)
+  const [imagenUrl, setImagenUrl] = useState(insumo.imagenUrl ?? '')
 
   function cerrar() { setAbierto(false); setError('') }
 
@@ -35,14 +34,15 @@ export function EditarInsumoDialog({ insumo }: Props) {
 
     const form = e.currentTarget
     const data = {
-      nombre: (form.elements.namedItem('nombre') as HTMLInputElement).value,
+      nombre:      (form.elements.namedItem('nombre')      as HTMLInputElement).value,
       descripcion: (form.elements.namedItem('descripcion') as HTMLInputElement).value || null,
-      unidad: (form.elements.namedItem('unidad') as HTMLInputElement).value,
+      unidad:      (form.elements.namedItem('unidad')      as HTMLInputElement).value,
       stockMinimo: Number((form.elements.namedItem('stockMinimo') as HTMLInputElement).value),
       esPublico,
       precioVenta: esPublico
         ? Number((form.elements.namedItem('precioVenta') as HTMLInputElement).value)
         : null,
+      imagenUrl: imagenUrl || null,
     }
 
     const res = await fetch(`/api/insumos/${insumo.id}`, {
@@ -104,83 +104,69 @@ export function EditarInsumoDialog({ insumo }: Props) {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Nombre *</label>
-                <input
-                  name="nombre"
-                  required
-                  defaultValue={insumo.nombre}
+                <input name="nombre" required defaultValue={insumo.nombre}
                   className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#6DC424]"
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
-                <input
-                  name="descripcion"
-                  defaultValue={insumo.descripcion ?? ''}
+                <input name="descripcion" defaultValue={insumo.descripcion ?? ''}
                   className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#6DC424]"
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Unidad de medida *</label>
-                <input
-                  name="unidad"
-                  required
-                  defaultValue={insumo.unidad}
+                <input name="unidad" required defaultValue={insumo.unidad}
                   className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#6DC424]"
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Stock mínimo (alerta)</label>
-                <input
-                  name="stockMinimo"
-                  type="number"
-                  step="0.001"
-                  min="0"
+                <input name="stockMinimo" type="number" step="0.001" min="0"
                   defaultValue={Number(insumo.stockMinimo)}
                   className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#6DC424]"
                 />
               </div>
 
-              <div>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={esPublico}
-                    onChange={e => setEsPublico(e.target.checked)}
-                    className="rounded"
-                  />
-                  <span className="text-sm font-medium text-gray-700">Visible en catálogo público</span>
-                </label>
-              </div>
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={esPublico}
+                  onChange={e => setEsPublico(e.target.checked)}
+                  className="rounded"
+                />
+                <span className="text-sm font-medium text-gray-700">Visible en catálogo público</span>
+              </label>
 
               {esPublico && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Precio de venta (Q)</label>
-                  <input
-                    name="precioVenta"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    required={esPublico}
-                    defaultValue={insumo.precioVenta ?? ''}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#6DC424]"
-                  />
-                </div>
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Precio de venta (Q) *</label>
+                    <input name="precioVenta" type="number" step="0.01" min="0"
+                      required={esPublico} defaultValue={insumo.precioVenta ?? ''}
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#6DC424]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                      Imagen del producto
+                      <span className="ml-1.5 font-normal text-gray-400 text-xs">aparece en el catálogo público</span>
+                    </label>
+                    <ImageUpload value={imagenUrl} onChange={setImagenUrl} disabled={loading} />
+                  </div>
+                </>
               )}
 
               <div className="flex gap-3 pt-1">
-                <button
-                  type="submit"
-                  disabled={loading}
+                <button type="submit" disabled={loading}
                   className="flex-1 rounded-lg bg-[#0f0f0f] py-2.5 text-sm font-semibold text-white hover:bg-[#1a1a1a] transition disabled:opacity-50"
                 >
                   {loading ? 'Guardando...' : 'Guardar cambios'}
                 </button>
-                <button
-                  type="button"
-                  onClick={eliminar}
+                <button type="button" onClick={eliminar}
                   className="rounded-lg border border-red-200 px-4 text-sm font-semibold text-red-600 hover:bg-red-50 transition"
                 >
                   Eliminar

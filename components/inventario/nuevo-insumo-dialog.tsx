@@ -3,15 +3,22 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Plus, X } from 'lucide-react'
+import { ImageUpload } from '@/components/ui/image-upload'
 
 export function NuevoInsumoDialog() {
   const router = useRouter()
-  const [abierto, setAbierto] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const [abierto, setAbierto]     = useState(false)
+  const [loading, setLoading]     = useState(false)
+  const [error, setError]         = useState('')
   const [esPublico, setEsPublico] = useState(false)
+  const [imagenUrl, setImagenUrl] = useState('')
 
-  function cerrar() { setAbierto(false); setError(''); setEsPublico(false) }
+  function cerrar() {
+    setAbierto(false)
+    setError('')
+    setEsPublico(false)
+    setImagenUrl('')
+  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -20,15 +27,16 @@ export function NuevoInsumoDialog() {
 
     const form = e.currentTarget
     const data = {
-      nombre: (form.elements.namedItem('nombre') as HTMLInputElement).value,
-      descripcion: (form.elements.namedItem('descripcion') as HTMLInputElement).value,
-      unidad: (form.elements.namedItem('unidad') as HTMLInputElement).value,
+      nombre:      (form.elements.namedItem('nombre')      as HTMLInputElement).value,
+      descripcion: (form.elements.namedItem('descripcion') as HTMLInputElement).value || null,
+      unidad:      (form.elements.namedItem('unidad')      as HTMLInputElement).value,
       stockActual: Number((form.elements.namedItem('stockActual') as HTMLInputElement).value),
       stockMinimo: Number((form.elements.namedItem('stockMinimo') as HTMLInputElement).value),
       esPublico,
       precioVenta: esPublico
         ? Number((form.elements.namedItem('precioVenta') as HTMLInputElement).value)
         : null,
+      imagenUrl: imagenUrl || null,
     }
 
     const res = await fetch('/api/insumos', {
@@ -77,18 +85,15 @@ export function NuevoInsumoDialog() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Nombre *</label>
-                <input
-                  name="nombre"
-                  required
+                <input name="nombre" required
                   className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#6DC424]"
-                  placeholder="Ej: Pintura sintética blanca"
+                  placeholder="Ej: Luz LED doble"
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
-                <input
-                  name="descripcion"
+                <input name="descripcion"
                   className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#6DC424]"
                   placeholder="Opcional"
                 />
@@ -96,9 +101,7 @@ export function NuevoInsumoDialog() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Unidad de medida *</label>
-                <input
-                  name="unidad"
-                  required
+                <input name="unidad" required
                   className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#6DC424]"
                   placeholder="Ej: galón, unidad, metro, libra"
                 />
@@ -107,58 +110,48 @@ export function NuevoInsumoDialog() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Stock actual</label>
-                  <input
-                    name="stockActual"
-                    type="number"
-                    step="0.001"
-                    min="0"
-                    defaultValue="0"
+                  <input name="stockActual" type="number" step="0.001" min="0" defaultValue="0"
                     className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#6DC424]"
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Stock mínimo</label>
-                  <input
-                    name="stockMinimo"
-                    type="number"
-                    step="0.001"
-                    min="0"
-                    defaultValue="0"
+                  <input name="stockMinimo" type="number" step="0.001" min="0" defaultValue="0"
                     className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#6DC424]"
                   />
                 </div>
               </div>
 
-              <div>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={esPublico}
-                    onChange={e => setEsPublico(e.target.checked)}
-                    className="rounded"
-                  />
-                  <span className="text-sm font-medium text-gray-700">Visible en catálogo público</span>
-                </label>
-              </div>
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={esPublico}
+                  onChange={e => setEsPublico(e.target.checked)}
+                  className="rounded"
+                />
+                <span className="text-sm font-medium text-gray-700">Visible en catálogo público</span>
+              </label>
 
               {esPublico && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Precio de venta (Q)</label>
-                  <input
-                    name="precioVenta"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    required={esPublico}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#6DC424]"
-                    placeholder="0.00"
-                  />
-                </div>
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Precio de venta (Q) *</label>
+                    <input name="precioVenta" type="number" step="0.01" min="0" required={esPublico}
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#6DC424]"
+                      placeholder="0.00"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                      Imagen del producto
+                      <span className="ml-1.5 font-normal text-gray-400 text-xs">recomendada para el catálogo</span>
+                    </label>
+                    <ImageUpload value={imagenUrl} onChange={setImagenUrl} disabled={loading} />
+                  </div>
+                </>
               )}
 
-              <button
-                type="submit"
-                disabled={loading}
+              <button type="submit" disabled={loading}
                 className="w-full rounded-lg bg-[#0f0f0f] py-2.5 text-sm font-semibold text-white hover:bg-[#1a1a1a] transition disabled:opacity-50"
               >
                 {loading ? 'Guardando...' : 'Crear insumo'}
