@@ -171,4 +171,10 @@ export default async function TrabajoPage({ params }: { params: { id: string } }
                   </tr>
                 ))}
               </tbody>
-    
+            </table>
+          )}
+        </div>
+      </div>
+    </>
+  )
+}
