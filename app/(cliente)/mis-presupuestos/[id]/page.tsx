@@ -35,4 +35,12 @@ export default async function PresupuestoClientePage({ params }: { params: { id:
   return (
     <div className="p-6 space-y-4">
       <Link
-        href="/mis-presupuesto
+        href="/mis-presupuestos"
+        className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 transition w-fit"
+      >
+        <ArrowLeft className="h-3.5 w-3.5" /> Volver a mis presupuestos
+      </Link>
+      <VistaPresupuestoCliente presupuesto={presupuesto} />
+    </div>
+  )
+}

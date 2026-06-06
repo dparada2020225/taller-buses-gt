@@ -148,4 +148,8 @@ export default async function InicioClientePage() {
               )
             })}
           </div>
-       
+        )}
+      </div>
+    </div>
+  )
+}

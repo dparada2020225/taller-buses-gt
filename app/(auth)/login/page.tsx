@@ -67,4 +67,12 @@ export default function LoginPage() {
 
           <p className="text-center text-sm text-gray-500">
             ¿Primera vez?{' '}
-            <a href="/registro" className="text-[#6
+            <a href="/registro" className="text-[#6DC424] hover:underline font-medium">
+              Crear cuenta
+            </a>
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+}
