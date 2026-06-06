@@ -1,17 +1,19 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import Image from 'next/image'
-import { Upload, X, ImageIcon, Loader2 } from 'lucide-react'
+import { X, ImageIcon, Loader2 } from 'lucide-react'
 
 interface Props {
-  value: string        // URL actual
+  value: string
   onChange: (url: string) => void
   disabled?: boolean
 }
 
+const CLOUD_NAME    = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
+const UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET
+
 export function ImageUpload({ value, onChange, disabled }: Props) {
-  const inputRef              = useRef<HTMLInputElement>(null)
+  const inputRef                  = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
   const [error, setError]         = useState('')
   const [preview, setPreview]     = useState(value)
@@ -26,34 +28,33 @@ export function ImageUpload({ value, onChange, disabled }: Props) {
       return
     }
 
+    if (!CLOUD_NAME || !UPLOAD_PRESET) {
+      setError('Cloudinary no está configurado (falta NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET)')
+      return
+    }
+
     setUploading(true)
     setError('')
 
     try {
-      // 1. Obtener firma del servidor
-      const sigRes = await fetch('/api/imagenes', { method: 'POST' })
-      if (!sigRes.ok) throw new Error('Error al firmar la subida')
-      const { timestamp, signature, folder, cloudName, apiKey } = await sigRes.json()
-
-      // 2. Subir directamente a Cloudinary (sin pasar por Railway)
+      // Subir directo a Cloudinary con unsigned preset — sin pasar por el servidor
       const formData = new FormData()
-      formData.append('file',      file)
-      formData.append('timestamp', String(timestamp))
-      formData.append('signature', signature)
-      formData.append('folder',    folder)
-      formData.append('api_key',   apiKey)
+      formData.append('file',           file)
+      formData.append('upload_preset',  UPLOAD_PRESET)
 
-      const uploadRes = await fetch(
-        `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+      const res = await fetch(
+        `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
         { method: 'POST', body: formData }
       )
-      if (!uploadRes.ok) throw new Error('Error al subir la imagen')
 
-      const data = await uploadRes.json()
-      const url: string = data.secure_url
+      if (!res.ok) {
+        const body = await res.json()
+        throw new Error(body.error?.message ?? 'Error al subir la imagen')
+      }
 
-      setPreview(url)
-      onChange(url)
+      const data = await res.json()
+      setPreview(data.secure_url)
+      onChange(data.secure_url)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Error desconocido')
     } finally {
@@ -81,14 +82,9 @@ export function ImageUpload({ value, onChange, disabled }: Props) {
   return (
     <div className="space-y-2">
       {preview ? (
-        /* Vista previa con botón de quitar */
         <div className="relative w-full h-40 rounded-xl overflow-hidden border border-gray-200 group">
-          <Image
-            src={preview}
-            alt="Vista previa"
-            fill
-            className="object-cover"
-          />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={preview} alt="Vista previa" className="w-full h-full object-cover" />
           {!disabled && (
             <button
               type="button"
@@ -100,13 +96,12 @@ export function ImageUpload({ value, onChange, disabled }: Props) {
           )}
         </div>
       ) : (
-        /* Zona de drag & drop */
         <div
           onDrop={handleDrop}
           onDragOver={e => e.preventDefault()}
           onClick={() => !disabled && !uploading && inputRef.current?.click()}
           className={`
-            relative flex flex-col items-center justify-center w-full h-32 rounded-xl border-2 border-dashed transition cursor-pointer
+            flex flex-col items-center justify-center w-full h-32 rounded-xl border-2 border-dashed transition cursor-pointer
             ${disabled || uploading
               ? 'border-gray-200 bg-gray-50 cursor-not-allowed'
               : 'border-gray-300 hover:border-[#6DC424] hover:bg-[#6DC424]/5'
@@ -138,9 +133,7 @@ export function ImageUpload({ value, onChange, disabled }: Props) {
         </div>
       )}
 
-      {error && (
-        <p className="text-xs text-red-600">{error}</p>
-      )}
+      {error && <p className="text-xs text-red-600">{error}</p>}
     </div>
   )
 }
