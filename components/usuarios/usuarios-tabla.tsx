@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { formatearFecha } from '@/lib/utils'
 import { Fragment } from 'react'
 import { Users, Pencil, X, CheckCircle, ShieldAlert, Shield } from 'lucide-react'
+import { NuevoUsuarioDialog } from '@/components/usuarios/nuevo-usuario-dialog'
 
 interface Usuario {
   id: string
@@ -73,6 +74,16 @@ export function UsuariosTabla({ usuarios: inicial, sesionId }: Props) {
 
   return (
     <div className="p-6 space-y-6">
+
+      {/* Header con botón */}
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-gray-500">
+          {usuarios.length} usuario{usuarios.length !== 1 ? 's' : ''} registrado{usuarios.length !== 1 ? 's' : ''}
+        </p>
+        <NuevoUsuarioDialog
+          onCreado={nuevo => setUsuarios(prev => [nuevo, ...prev])}
+        />
+      </div>
 
       {/* KPIs */}
       <div className="grid grid-cols-3 gap-4">
