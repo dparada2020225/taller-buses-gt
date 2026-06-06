@@ -37,7 +37,6 @@ export default async function HistorialPage() {
         <div className="space-y-3">
           {todos.map((trabajo) => {
             const totalPagado = trabajo.pagos.reduce((s, p) => s + Number(p.monto), 0)
-            const presInicial = trabajo.presupuestos.find(p => p.tipo === 'INICIAL')
             const extras = trabajo.presupuestos.filter(p => p.tipo === 'EXTRA')
 
             const ESTADO_STYLE: Record<string, { bg: string; text: string }> = {

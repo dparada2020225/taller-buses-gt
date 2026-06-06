@@ -1,29 +1,28 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { signIn } from '@/lib/auth-client'
 
 export function LoginForm() {
-  const router = useRouter()
-  const [loading, setLoading] = useState(false)
+  const router       = useRouter()
+  const searchParams = useSearchParams()
+  const redirectTo   = searchParams.get('redirect') ?? '/'
+
+  const [loading, setLoading]           = useState(false)
   const [loadingGoogle, setLoadingGoogle] = useState(false)
-  const [error, setError] = useState('')
+  const [error, setError]               = useState('')
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setLoading(true)
     setError('')
 
-    const form = e.currentTarget
-    const email = (form.elements.namedItem('email') as HTMLInputElement).value
+    const form     = e.currentTarget
+    const email    = (form.elements.namedItem('email')    as HTMLInputElement).value
     const password = (form.elements.namedItem('password') as HTMLInputElement).value
 
-    const { error: authError } = await signIn.email({
-      email,
-      password,
-      callbackURL: '/',
-    })
+    const { error: authError } = await signIn.email({ email, password, callbackURL: redirectTo })
 
     if (authError) {
       setError('Correo o contraseña incorrectos.')
@@ -31,7 +30,7 @@ export function LoginForm() {
       return
     }
 
-    router.push('/')
+    router.push(redirectTo)
   }
 
   async function handleGoogle() {

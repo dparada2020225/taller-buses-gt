@@ -11,6 +11,9 @@ import {
   FileText,
   ShoppingCart,
   CreditCard,
+  ShoppingBag,
+  Shield,
+  User,
   LogOut,
 } from 'lucide-react'
 import { signOut } from '@/lib/auth-client'
@@ -18,13 +21,19 @@ import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 
 const NAV_ITEMS = [
-  { href: '/dashboard', label: 'Inicio', icon: LayoutDashboard },
-  { href: '/clientes', label: 'Clientes', icon: Users },
-  { href: '/trabajos', label: 'Trabajos', icon: Wrench },
-  { href: '/presupuestos-admin', label: 'Presupuestos', icon: FileText },
-  { href: '/inventario', label: 'Inventario', icon: Package },
-  { href: '/compras', label: 'Compras', icon: ShoppingCart },
-  { href: '/pagos', label: 'Pagos', icon: CreditCard },
+  { href: '/dashboard',          label: 'Inicio',          icon: LayoutDashboard },
+  { href: '/clientes',           label: 'Clientes',        icon: Users },
+  { href: '/trabajos',           label: 'Trabajos',        icon: Wrench },
+  { href: '/presupuestos-admin', label: 'Presupuestos',    icon: FileText },
+  { href: '/inventario',         label: 'Inventario',      icon: Package },
+  { href: '/compras',            label: 'Compras',         icon: ShoppingCart },
+  { href: '/pagos',              label: 'Pagos',           icon: CreditCard },
+  { href: '/ventas',             label: 'Ventas directas', icon: ShoppingBag },
+  { href: '/auditoria',          label: 'Auditoría',       icon: Shield },
+]
+
+const NAV_BOTTOM = [
+  { href: '/perfil', label: 'Mi perfil', icon: User },
 ]
 
 export function Sidebar() {
@@ -76,8 +85,26 @@ export function Sidebar() {
         })}
       </nav>
 
-      {/* Cerrar sesión */}
-      <div className="px-3 py-4 border-t border-gray-100">
+      {/* Perfil + cerrar sesión */}
+      <div className="px-3 py-4 border-t border-gray-100 space-y-0.5">
+        {NAV_BOTTOM.map(({ href, label, icon: Icon }) => {
+          const active = pathname.startsWith(href)
+          return (
+            <Link
+              key={href}
+              href={href}
+              className={cn(
+                'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                active
+                  ? 'bg-[#0f0f0f] text-white'
+                  : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+              )}
+            >
+              <Icon className={cn('h-4 w-4 shrink-0', active ? 'text-[#6DC424]' : '')} />
+              {label}
+            </Link>
+          )
+        })}
         <button
           onClick={handleSignOut}
           className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-colors"

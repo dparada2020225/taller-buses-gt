@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import Image from 'next/image'
 import { LoginForm } from '@/components/auth/login-form'
 
@@ -6,7 +7,6 @@ export default function LoginPage() {
     <div className="flex min-h-screen">
       {/* Panel izquierdo — marca */}
       <div className="hidden lg:flex lg:w-1/2 flex-col items-center justify-center bg-[#0f0f0f] p-12 relative overflow-hidden">
-        {/* Círculos decorativos de fondo */}
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-20 -left-16 w-72 h-72 rounded-full border-[50px] border-[#6DC424]/10" />
           <div className="absolute -bottom-16 -right-16 w-[28rem] h-[28rem] rounded-full border-[70px] border-[#6DC424]/10" />
@@ -20,7 +20,6 @@ export default function LoginPage() {
             height={140}
             priority
           />
-
           <div className="space-y-1">
             <p className="text-[#6DC424] text-sm font-semibold tracking-[0.25em] uppercase">
               Reconstructora
@@ -32,9 +31,7 @@ export default function LoginPage() {
               El trabajo bien hecho
             </p>
           </div>
-
           <div className="w-16 h-px bg-[#6DC424]/30" />
-
           <p className="text-white/30 text-sm max-w-xs leading-relaxed">
             Sistema interno de gestión de trabajos, inventario y clientes.
           </p>
@@ -43,7 +40,6 @@ export default function LoginPage() {
 
       {/* Panel derecho — formulario */}
       <div className="flex w-full lg:w-1/2 flex-col items-center justify-center bg-white px-8 py-12">
-        {/* Logo solo en móvil */}
         <div className="flex lg:hidden flex-col items-center mb-10 space-y-3">
           <div className="bg-[#0f0f0f] rounded-2xl p-4">
             <Image src="/images/logo.png" alt="Logo" width={64} height={64} />
@@ -62,7 +58,10 @@ export default function LoginPage() {
             </p>
           </div>
 
-          <LoginForm />
+          {/* Suspense requerido porque LoginForm usa useSearchParams() */}
+          <Suspense fallback={<div className="h-48 animate-pulse rounded-lg bg-gray-100" />}>
+            <LoginForm />
+          </Suspense>
 
           <p className="text-center text-sm text-gray-500">
             ¿Primera vez?{' '}

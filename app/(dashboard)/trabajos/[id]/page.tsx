@@ -34,9 +34,10 @@ export default async function TrabajoPage({ params }: { params: { id: string } }
 
   if (!trabajo) notFound()
 
-  const presInicial = trabajo.presupuestos.find(p => p.tipo === 'INICIAL' && p.estado === 'APROBADO')
+  // Total = inicial aprobado + todos los extras aprobados
+  const presupuestosAprobados = trabajo.presupuestos.filter(p => p.estado === 'APROBADO')
+  const totalPresupuestado = presupuestosAprobados.reduce((s, p) => s + Number(p.montoTotal), 0)
   const totalPagado = trabajo.pagos.reduce((s, p) => s + Number(p.monto), 0)
-  const totalPresupuestado = Number(presInicial?.montoTotal ?? 0)
   const saldo = totalPresupuestado - totalPagado
 
   return (

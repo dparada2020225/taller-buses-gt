@@ -1,0 +1,2 @@
+// Ruta movida a app/(cliente)/mi-cuenta/page.tsx para evitar conflicto con (dashboard)/perfil
+// Ambas resolvían a /perfil — Next.js no permite dos páginas en la misma ruta.

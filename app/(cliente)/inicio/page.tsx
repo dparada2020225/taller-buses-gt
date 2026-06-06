@@ -28,10 +28,12 @@ export default async function InicioClientePage() {
     t.presupuestos.filter(p => p.estado === 'PENDIENTE')
   )
 
-  const totalPresupuestado = trabajos.reduce((sum, t) => {
-    const p = t.presupuestos.find(p => p.estado === 'APROBADO' && p.tipo === 'INICIAL')
-    return sum + Number(p?.montoTotal ?? 0)
-  }, 0)
+  // Sumar inicial + todos los extras aprobados
+  const totalPresupuestado = trabajos.reduce((sum, t) =>
+    sum + t.presupuestos
+      .filter(p => p.estado === 'APROBADO')
+      .reduce((s, p) => s + Number(p.montoTotal), 0),
+  0)
 
   const totalPagado = trabajos.reduce((sum, t) =>
     sum + t.pagos.reduce((s, p) => s + Number(p.monto), 0), 0)
@@ -87,9 +89,10 @@ export default async function InicioClientePage() {
         ) : (
           <div className="divide-y divide-gray-50">
             {trabajos.map((trabajo) => {
-              const presInicial = trabajo.presupuestos.find(p => p.tipo === 'INICIAL')
               const pagado = trabajo.pagos.reduce((s, p) => s + Number(p.monto), 0)
-              const total = Number(presInicial?.montoTotal ?? 0)
+              const total  = trabajo.presupuestos
+                .filter(p => p.estado === 'APROBADO')
+                .reduce((s, p) => s + Number(p.montoTotal), 0)
               const pct = total > 0 ? Math.min(100, Math.round((pagado / total) * 100)) : 0
 
               return (
@@ -109,7 +112,7 @@ export default async function InicioClientePage() {
                     <p className="text-xs text-gray-400">{formatearFecha(trabajo.createdAt)}</p>
                   </div>
 
-                  {presInicial && total > 0 && (
+                  {total > 0 && (
                     <div className="space-y-1.5">
                       <div className="flex justify-between text-xs text-gray-500">
                         <span>Pagado: {formatearMoneda(pagado)}</span>
